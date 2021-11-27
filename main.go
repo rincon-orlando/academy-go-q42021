@@ -16,8 +16,9 @@ import (
 
 const csvFilename = "pokemons.csv"
 
+// Pokemon - Struct containing information about a Pokemon
 type Pokemon struct {
-	Id   int    `json:"id"`
+	ID   int    `json:"id"`
 	Name string `json:"name"`
 }
 
@@ -31,7 +32,7 @@ func main() {
 
 	// Loop through pokemons and print 'em all
 	for _, pokemon := range pokemonDB.data {
-		fmt.Printf("ID: %v, Name %v\n", pokemon.Id, pokemon.Name)
+		fmt.Printf("ID: %v, Name %v\n", pokemon.ID, pokemon.Name)
 	}
 
 	// Configure router
@@ -96,7 +97,7 @@ func (db *DB) initFromCsv(filename string) (*DB, error) {
 			return db, errors.New("Error converting " + line[0] + " to int")
 		}
 		pokemon := Pokemon{
-			Id:   id,
+			ID:   id,
 			Name: line[1],
 		}
 		pokemons[id] = pokemon

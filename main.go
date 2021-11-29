@@ -1,22 +1,22 @@
 package main
 
-// Great help
-// https://golangcode.com/how-to-read-a-csv-file-into-a-struct/
-
 import (
 	"net/http"
 	"rincon-orlando/go-bootcamp/model"
 	"rincon-orlando/go-bootcamp/repository"
+	"rincon-orlando/go-bootcamp/util"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 const csvFilename = "pokemons.csv"
+const pokemonApiUrl = "https://pokeapi.co/api/v2/pokemon/"
 
 type PokemonDB interface {
 	GetAllPokemons() []model.Pokemon
 	GetPokemonById(id int) (model.Pokemon, error)
+	SetPokemons(pokemons []model.Pokemon)
 }
 
 var pokemonDB PokemonDB
@@ -32,6 +32,7 @@ func main() {
 	router := gin.Default()
 	router.GET("/pokemons", getAllPokemons)
 	router.GET("/pokemons/:id", getPokemonById)
+	router.GET("/pokemons/fetch", fetchPokemonsFromApi)
 
 	// Start server
 	router.Run("localhost:8082")
@@ -57,4 +58,17 @@ func getPokemonById(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusOK, pokemon)
+}
+
+func fetchPokemonsFromApi(c *gin.Context) {
+	data, err := util.FetchPokemonsFromApi(pokemonApiUrl)
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+
+	// Update repository underlying info
+	pokemonDB.SetPokemons(data)
+
+	c.IndentedJSON(http.StatusOK, pokemonDB.GetAllPokemons())
 }

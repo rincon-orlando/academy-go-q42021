@@ -1,20 +1,22 @@
-package service
+package usecase
 
 import (
 	"encoding/csv"
 	"errors"
 	"os"
-	"rincon-orlando/go-bootcamp/model"
 	"strconv"
+
+	"rincon-orlando/go-bootcamp/model"
 )
 
 type repo interface {
 	GetAllPokemons() []model.Pokemon
-	GetPokemonById(id int) (model.Pokemon, error)
+	GetPokemonById(id int) (*model.Pokemon, error)
 	SetPokemons(pokemons []model.Pokemon)
 }
 
-type Service struct {
+// UseCase - Definition of a usecase layer, combining a repo and CSV filename
+type UseCase struct {
 	repo        repo
 	csvFileName string
 }
@@ -22,19 +24,19 @@ type Service struct {
 // Great help
 // https://golangcode.com/how-to-read-a-csv-file-into-a-struct/
 
-// Factory method
-func NewService(repo repo, csvFilename string) (*Service, error) {
+// New - UseCase factory
+func New(repo repo, csvFilename string) (*UseCase, error) {
 	// Open CSV file
 	f, err := os.Open(csvFilename)
 	if err != nil {
-		return &Service{}, err
+		return nil, err
 	}
 	defer f.Close()
 
 	// Read file into a variable
 	lines, err := csv.NewReader(f).ReadAll()
 	if err != nil {
-		return &Service{}, err
+		return nil, err
 	}
 
 	v := make([]model.Pokemon, 0, len(lines))
@@ -43,7 +45,7 @@ func NewService(repo repo, csvFilename string) (*Service, error) {
 	for _, line := range lines {
 		id, err := strconv.Atoi(line[0])
 		if err != nil {
-			return &Service{}, errors.New("Error converting " + line[0] + " to int")
+			return nil, errors.New("Error converting " + line[0] + " to int")
 		}
 		pokemon := model.Pokemon{
 			ID:   id,
@@ -53,33 +55,33 @@ func NewService(repo repo, csvFilename string) (*Service, error) {
 	}
 
 	// Build a new empty DB
-	newService := &Service{repo, csvFilename}
+	newUseCase := &UseCase{repo, csvFilename}
 	// Then initialize the new DB with this particular set of Pokemons
-	newService.repo.SetPokemons(v)
+	newUseCase.repo.SetPokemons(v)
 
-	return newService, nil
+	return newUseCase, nil
 }
 
 // GetAllPokemons - Returns a slice of all Pokemons available in this repository
-func (s Service) GetAllPokemons() []model.Pokemon {
-	return s.repo.GetAllPokemons()
+func (uc UseCase) GetAllPokemons() []model.Pokemon {
+	return uc.repo.GetAllPokemons()
 }
 
 // GetPokemonById - Returns a pokemon given its id
-func (csvdb Service) GetPokemonById(id int) (model.Pokemon, error) {
-	return csvdb.repo.GetPokemonById(id)
+func (uc UseCase) GetPokemonById(id int) (*model.Pokemon, error) {
+	return uc.repo.GetPokemonById(id)
 }
 
 // SetPokemons - Updates the internal repository with a new set of Pokemons
 // Pointer as receiver so internal db can be modified
-func (s *Service) SetPokemons(pokemons []model.Pokemon) {
-	s.repo.SetPokemons(pokemons)
+func (uc *UseCase) SetPokemons(pokemons []model.Pokemon) {
+	uc.repo.SetPokemons(pokemons)
 	// Once internal data is updated, persist it into the csv file
-	s.persist(pokemons)
+	uc.persist(pokemons)
 }
 
-func (s Service) persist(pokemons []model.Pokemon) error {
-	file, err := os.Create(s.csvFileName)
+func (uc UseCase) persist(pokemons []model.Pokemon) error {
+	file, err := os.Create(uc.csvFileName)
 
 	if err != nil {
 		return err

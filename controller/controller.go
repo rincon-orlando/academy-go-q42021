@@ -2,37 +2,41 @@ package controller
 
 import (
 	"net/http"
-	"rincon-orlando/go-bootcamp/model"
-	"rincon-orlando/go-bootcamp/util"
 	"strconv"
+
+	"rincon-orlando/go-bootcamp/model"
 
 	"github.com/gin-gonic/gin"
 )
 
-const pokemonApiUrl = "https://pokeapi.co/api/v2/pokemon/"
-
-type repo interface {
+type usecase interface {
 	GetAllPokemons() []model.Pokemon
-	GetPokemonById(id int) (model.Pokemon, error)
+	GetPokemonById(id int) (*model.Pokemon, error)
 	SetPokemons(pokemons []model.Pokemon)
 }
 
+type service interface {
+	FetchPokemonsFromApi() ([]model.Pokemon, error)
+}
+
+// Controller - Handler to communicate between endpoints and the usecase + service (external API client)
 type Controller struct {
-	repo repo
+	uc usecase
+	s  service
 }
 
-// Factory method
-func NewController(repo repo) Controller {
-	return Controller{repo}
+// New - Controller Factory
+func New(uc usecase, s service) Controller {
+	return Controller{uc, s}
 }
 
-// GetAllPokemons - service that returns all pokemons handled by the underlying repository
+// GetAllPokemons - handler that returns all pokemons in the underlying repository
 func (c Controller) GetAllPokemons(ctx *gin.Context) {
-	data := c.repo.GetAllPokemons()
+	data := c.uc.GetAllPokemons()
 	ctx.IndentedJSON(http.StatusOK, data)
 }
 
-// GetPokemonById - service that returns a particular pokemon if it is present in the repository
+// GetPokemonById - handler that returns a particular pokemon if it is present in the underlying repository
 func (c Controller) GetPokemonById(ctx *gin.Context) {
 	id := ctx.Param("id")
 	idInt, err := strconv.Atoi(id)
@@ -41,7 +45,7 @@ func (c Controller) GetPokemonById(ctx *gin.Context) {
 		return
 	}
 
-	pokemon, err := c.repo.GetPokemonById(idInt)
+	pokemon, err := c.uc.GetPokemonById(idInt)
 	if err != nil {
 		ctx.IndentedJSON(http.StatusNotFound, gin.H{"message": err.Error()})
 		return
@@ -50,16 +54,16 @@ func (c Controller) GetPokemonById(ctx *gin.Context) {
 	ctx.IndentedJSON(http.StatusOK, pokemon)
 }
 
-// GetPokemonById - service that fetchs a pokemon list from external api and persists it into the underlying repository
+// FetchPokemonsFromApi - service that fetchs a pokemon list from external api and persists it into the underlying repository
 func (c Controller) FetchPokemonsFromApi(ctx *gin.Context) {
-	data, err := util.FetchPokemonsFromApi(pokemonApiUrl)
+	data, err := c.s.FetchPokemonsFromApi()
 	if err != nil {
 		ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
 
 	// Update repository underlying info
-	c.repo.SetPokemons(data)
+	c.uc.SetPokemons(data)
 
-	ctx.IndentedJSON(http.StatusOK, c.repo.GetAllPokemons())
+	ctx.IndentedJSON(http.StatusOK, c.uc.GetAllPokemons())
 }

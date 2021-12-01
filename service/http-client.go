@@ -1,32 +1,43 @@
-package util
+package service
 
 import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"rincon-orlando/go-bootcamp/model"
 	"strconv"
 	"strings"
+
+	"rincon-orlando/go-bootcamp/model"
 )
 
 // Useful doc
 // https://tutorialedge.net/golang/consuming-restful-api-with-go/
 
-// A Response struct to map the Entire Response
+// Response struct to map the entire Pokemon API response
 type apiResponse struct {
 	Results []apiPokemon `json:"results"`
 }
 
-// A Pokemon struct to map only Pokemon entries from the Respose
+// Pokemon struct to map only Pokemon entries from the respose (dismiss everything else)
 type apiPokemon struct {
 	Name string `json:"name"`
 	Url  string `json:"url"`
 }
 
+// Service - Definition of a use case
+type Service struct {
+	url string
+}
+
+// New - Service factory
+func New(url string) Service {
+	return Service{url}
+}
+
 // FetchPokemonsFromApi - Utility method to try fetch Pokemons from a particular url
-func FetchPokemonsFromApi(url string) ([]model.Pokemon, error) {
-	response, err := http.Get(url)
+func (s Service) FetchPokemonsFromApi() ([]model.Pokemon, error) {
+	response, err := http.Get(s.url)
 
 	if err != nil {
 		return nil, err

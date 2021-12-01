@@ -2,6 +2,9 @@ package config
 
 import "github.com/spf13/viper"
 
+// Resource:
+// https://dev.to/techschoolguru/load-config-from-file-environment-variables-in-golang-with-viper-2j2d
+
 // Config - Hold configuration values from environment variables
 type Config struct {
 	CSV_FILENAME    string `mapstructure:"CSV_FILENAME"`

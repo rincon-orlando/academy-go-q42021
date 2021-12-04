@@ -15,17 +15,22 @@ type repo interface {
 	SetPokemons(pokemons []model.Pokemon)
 }
 
-// UseCase - Definition of a usecase layer, combining a repo and CSV filename
+type service interface {
+	FetchPokemonsFromApi() ([]model.Pokemon, error)
+}
+
+// UseCase - Definition of a usecase layer, combining a repo, a csv filename + service (external API client)
 type UseCase struct {
 	repo        repo
 	csvFileName string
+	service     service
 }
 
 // Great help
 // https://golangcode.com/how-to-read-a-csv-file-into-a-struct/
 
 // New - UseCase factory
-func New(repo repo, csvFilename string) (*UseCase, error) {
+func New(repo repo, csvFilename string, service service) (*UseCase, error) {
 	// Open CSV file
 	f, err := os.Open(csvFilename)
 	if err != nil {
@@ -55,7 +60,7 @@ func New(repo repo, csvFilename string) (*UseCase, error) {
 	}
 
 	// Build a new empty DB
-	newUseCase := &UseCase{repo, csvFilename}
+	newUseCase := &UseCase{repo, csvFilename, service}
 	// Then initialize the new DB with this particular set of Pokemons
 	newUseCase.repo.SetPokemons(v)
 
@@ -78,6 +83,11 @@ func (uc *UseCase) SetPokemons(pokemons []model.Pokemon) {
 	uc.repo.SetPokemons(pokemons)
 	// Once internal data is updated, persist it into the csv file
 	uc.persist(pokemons)
+}
+
+// FetchPokemonsFromApi - Returns a slice of Pokemons from external API
+func (uc UseCase) FetchPokemonsFromApi() ([]model.Pokemon, error) {
+	return uc.service.FetchPokemonsFromApi()
 }
 
 func (uc UseCase) persist(pokemons []model.Pokemon) error {

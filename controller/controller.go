@@ -13,21 +13,17 @@ type usecase interface {
 	GetAllPokemons() []model.Pokemon
 	GetPokemonById(id int) (*model.Pokemon, error)
 	SetPokemons(pokemons []model.Pokemon)
-}
-
-type service interface {
 	FetchPokemonsFromApi() ([]model.Pokemon, error)
 }
 
-// Controller - Handler to communicate between endpoints and the usecase + service (external API client)
+// Controller - Handler to communicate between endpoints and the usecase
 type Controller struct {
 	uc usecase
-	s  service
 }
 
 // New - Controller Factory
-func New(uc usecase, s service) Controller {
-	return Controller{uc, s}
+func New(uc usecase) Controller {
+	return Controller{uc}
 }
 
 // GetAllPokemons - handler that returns all pokemons in the underlying repository
@@ -54,9 +50,9 @@ func (c Controller) GetPokemonById(ctx *gin.Context) {
 	ctx.IndentedJSON(http.StatusOK, pokemon)
 }
 
-// FetchPokemonsFromApi - service that fetchs a pokemon list from external api and persists it into the underlying repository
+// FetchPokemonsFromApi - handlers that returns a pokemon list from external API
 func (c Controller) FetchPokemonsFromApi(ctx *gin.Context) {
-	data, err := c.s.FetchPokemonsFromApi()
+	data, err := c.uc.FetchPokemonsFromApi()
 	if err != nil {
 		ctx.IndentedJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return

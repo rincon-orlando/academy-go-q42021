@@ -19,14 +19,16 @@ func main() {
 	}
 
 	// Dependency injection
+	// Clean architecture layer order:
+	// router -> controller -> usecase -> service / repository
 	db := repository.New()
-	usecase, err := usecase.New(&db, config.CSV_FILENAME)
+	service := service.New(config.POKEMON_API_URL)
+	usecase, err := usecase.New(&db, config.CSV_FILENAME, service)
 	if err != nil {
 		log.Fatal("Error starting up database" + err.Error())
 	}
-	service := service.New(config.POKEMON_API_URL)
 
-	controller := controller.New(usecase, service)
+	controller := controller.New(usecase)
 
 	// Configure router
 	router := gin.Default()

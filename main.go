@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	config, err := config.New(".")
+	cfg, err := config.New(".")
 	if err != nil {
 		log.Fatal("cannot load config:", err)
 	}
@@ -22,8 +22,8 @@ func main() {
 	// Clean architecture layer order:
 	// router -> controller -> usecase -> service / repository
 	db := repository.New()
-	service := service.New(config.POKEMON_API_URL)
-	usecase, err := usecase.New(&db, config.CSV_FILENAME, service)
+	service := service.New(cfg.POKEMON_API_URL)
+	usecase, err := usecase.New(&db, cfg.CSV_FILENAME, service)
 	if err != nil {
 		log.Fatal("Error starting up database" + err.Error())
 	}
@@ -35,6 +35,7 @@ func main() {
 	router.GET("/pokemons", controller.GetAllPokemons)
 	router.GET("/pokemons/:id", controller.GetPokemonById)
 	router.GET("/pokemons/fetch", controller.FetchPokemonsFromApi)
+	router.GET("/pokemons/filter", controller.FilterPokemonsConcurrently)
 
 	// Start server
 	router.Run("localhost:8082")

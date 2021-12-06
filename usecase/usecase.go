@@ -3,10 +3,14 @@ package usecase
 import (
 	"encoding/csv"
 	"errors"
+	"fmt"
 	"os"
 	"strconv"
 
+	"rincon-orlando/go-bootcamp/config"
 	"rincon-orlando/go-bootcamp/model"
+	"rincon-orlando/go-bootcamp/util/enum"
+	"rincon-orlando/go-bootcamp/workerpool"
 )
 
 type repo interface {
@@ -110,4 +114,66 @@ func (uc UseCase) persist(pokemons []model.Pokemon) error {
 	}
 
 	return nil
+}
+
+type pokeTask struct {
+	pokemon   model.Pokemon
+	processor func(model.Pokemon) bool
+}
+
+// Run - Poketask method execution, ready to send results to input channel
+func (pt pokeTask) Run(ch chan<- interface{}) bool {
+	if pt.processor(pt.pokemon) {
+		// Inject the pokemon to the output channel
+		ch <- pt.pokemon
+		return true
+	}
+	return false
+}
+
+// FilterPokemonsConcurrently - Configures and executes a worker pool to extract a set of pokemons based off the given criteria
+func (uc UseCase) FilterPokemonsConcurrently(oe enum.OddEven, numWorkers int, items int, ipw int) []model.Pokemon {
+	// First, get all pokemons to work
+	allPokemons := uc.GetAllPokemons()
+
+	fmt.Printf("Worker config: numWorkers %d, items = %d, items_per_worker = %d\n", numWorkers, items, ipw)
+
+	// TODO: I may want to move the dependency injection somewhere else
+	config := config.NewPoolConfig(oe, numWorkers, items, ipw)
+	pool := workerpool.New(numWorkers, config)
+
+	// Process a Pokemon, to verify if matches what we are looking for
+	filterPokemon := func(pokemon model.Pokemon) bool {
+		if oe == enum.Even {
+			return pokemon.IsEven()
+		}
+		return !pokemon.IsEven()
+	}
+
+	// Task config
+	var tasks []pokeTask
+	for _, p := range allPokemons {
+		tasks = append(tasks, pokeTask{
+			pokemon:   p,
+			processor: filterPokemon,
+		})
+	}
+
+	// Scheduling work
+	for _, task := range tasks {
+		pool.ScheduleWork(task)
+	}
+
+	// Worker pool returns a generic interface element
+	genericResponse := pool.Monitor()
+
+	// So, turn those interfaces into pokemons
+	response := make([]model.Pokemon, len(genericResponse))
+	for i, v := range genericResponse {
+		response[i] = v.(model.Pokemon)
+	}
+
+	pool.Close()
+
+	return response
 }

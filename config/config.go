@@ -9,6 +9,9 @@ import "github.com/spf13/viper"
 type Config struct {
 	CSV_FILENAME    string `mapstructure:"CSV_FILENAME"`
 	POKEMON_API_URL string `mapstructure:"POKEMON_API_URL"`
+	// DEFAULT_FILTER_NUM_WORKERS      int    `mapstructure:"DEFAULT_NUM_WORKERS"`
+	// DEFAULT_FILTER_ITEMS            int    `mapstructure:"DEFAULT_FILTER_ITEMS"`
+	// DEFAULT_FILTER_ITEMS_PER_WORKER int    `mapstructure:"DEFAULT_FILTER_ITEMS_PER_WORKER"`
 }
 
 // New - Config factory method

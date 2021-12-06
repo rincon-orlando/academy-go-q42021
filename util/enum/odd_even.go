@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// OddEven - Works as enum to identify Odd or Even numbers
 type OddEven int
 
 const (
@@ -13,6 +14,7 @@ const (
 	Even
 )
 
+// ParseOddEven - Takes a string and returns an Odd or Even enum
 func ParseOddEven(input string) (OddEven, error) {
 	switch strings.ToLower(input) {
 	case "odd":

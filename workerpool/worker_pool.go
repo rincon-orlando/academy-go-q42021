@@ -7,6 +7,7 @@ import (
 	"rincon-orlando/go-bootcamp/config"
 )
 
+// GoRoutinePool struct that holds a set of jobs to execute, a wait group and config details
 type GoRoutinePool struct {
 	queue  chan work
 	wg     sync.WaitGroup
@@ -21,6 +22,7 @@ type work struct {
 	fn workFunc
 }
 
+// New - Factory method
 func New(numWorkers int, config config.GoRoutinePoolConfig) *GoRoutinePool {
 	gp := &GoRoutinePool{
 		// Had to make this a buffered channel, otherwise this was blocking on some requests like
@@ -35,10 +37,12 @@ func New(numWorkers int, config config.GoRoutinePoolConfig) *GoRoutinePool {
 	return gp
 }
 
+// ScheduleWork - Takes a work function and add it to a job channel for execution
 func (gp *GoRoutinePool) ScheduleWork(fn workFunc) {
 	gp.queue <- work{fn}
 }
 
+// AddWorkers - Add workers configured with the appropriate go routine
 func (gp *GoRoutinePool) AddWorkers(numWorkers int) {
 	gp.wg.Add(numWorkers)
 	for i := 0; i < numWorkers; i++ {
@@ -61,6 +65,7 @@ func (gp *GoRoutinePool) AddWorkers(numWorkers int) {
 	}
 }
 
+// Monitor - Takes the logic to wait for the channels to be populated with the required information
 func (gp *GoRoutinePool) Monitor() []interface{} {
 	response := make([]interface{}, 0)
 	foundItems := 0
@@ -85,6 +90,7 @@ func (gp *GoRoutinePool) Monitor() []interface{} {
 	return response
 }
 
+// Close - Release the channel and waits for the waitgroup to complete
 func (gp *GoRoutinePool) Close() {
 	close(gp.queue)
 	gp.wg.Wait()

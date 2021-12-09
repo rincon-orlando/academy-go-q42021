@@ -25,7 +25,7 @@ type apiPokemon struct {
 	Url  string `json:"url"`
 }
 
-// Service - Definition of a use case
+// Service - Definition of a service
 type Service struct {
 	url string
 }
@@ -38,10 +38,10 @@ func New(url string) Service {
 // FetchPokemonsFromApi - Utility method to try fetch Pokemons from a particular url
 func (s Service) FetchPokemonsFromApi() ([]model.Pokemon, error) {
 	response, err := http.Get(s.url)
-
 	if err != nil {
 		return nil, err
 	}
+	defer response.Body.Close()
 
 	responseData, err := ioutil.ReadAll(response.Body)
 	if err != nil {

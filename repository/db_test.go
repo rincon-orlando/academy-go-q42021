@@ -80,18 +80,18 @@ func TestDB_SetAllPokemons(t *testing.T) {
 func TestDB_GetAllPokemons(t *testing.T) {
 	testCases := []struct {
 		name           string
-		expectedLength int
 		givenPokemons  []model.Pokemon
+		expectedLength int
 	}{
 		{
 			name:           "get all pokemons",
-			givenPokemons:  pokemons,
 			expectedLength: 5,
+			givenPokemons:  pokemons,
 		},
 		{
 			name:           "get all pokemons with less data",
-			givenPokemons:  pokemons[:3],
 			expectedLength: 3,
+			givenPokemons:  pokemons[:3],
 		},
 	}
 
